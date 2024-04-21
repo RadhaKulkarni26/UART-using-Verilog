@@ -1,0 +1,42 @@
+module uart_transmitter(
+    input clk,
+    input rst,
+    input [7:0] data_in,
+    output reg tx_out
+);
+
+reg [3:0] tx_state;
+reg [3:0] tx_count;
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        tx_out <= 1; // Set to idle state
+        tx_state <= 4'b0000; // Idle state
+        tx_count <= 0;
+    end else begin
+        case (tx_state)
+            4'b0000: begin // Idle state
+                if (tx_count == 3) begin
+                    tx_out <= 0; // Start bit
+                    tx_state <= 4'b0001; // Move to data state
+                    tx_count <= 0;
+                end else begin
+                    tx_out <= 1; // Idle state
+                    tx_count <= tx_count + 1;
+                end
+            end
+            4'b0001: begin // Data state
+                if (tx_count < 8) begin
+                    tx_out <= data_in[tx_count]; // Send data bits
+                    tx_count <= tx_count + 1;
+                end else begin
+                    tx_out <= 1; // Stop bit
+                    tx_state <= 4'b0000; // Return to idle state
+                    tx_count <= 0;
+                end
+            end
+        endcase
+    end
+end
+
+endmodule

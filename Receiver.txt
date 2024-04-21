@@ -1,0 +1,43 @@
+module uart_receiver(
+    input clk,
+    input rst,
+    input rx_in,
+    output reg [7:0] data_out
+);
+
+reg [3:0] rx_state;
+reg [3:0] rx_count;
+
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        rx_state <= 4'b0000; // Idle state
+        rx_count <= 0;
+        data_out <= 8'b00000000; // Initialize data output
+    end else begin
+        case (rx_state)
+            4'b0000: begin // Idle state
+                if (rx_in == 0) begin
+                    rx_state <= 4'b0001; // Start bit detected
+                    rx_count <= 0;
+                end
+            end
+            4'b0001: begin // Start bit detected, start receiving data bits
+                if (rx_count < 8) begin
+                    data_out[rx_count] <= rx_in; // Receive data bits
+                    rx_count <= rx_count + 1;
+                end else begin
+                    rx_state <= 4'b0010; // All data bits received, verify stop bit
+                    rx_count <= 0;
+                end
+            end
+            4'b0010: begin // Verify stop bit and prepare for next reception
+                if (rx_in == 1) begin
+                    // Stop bit valid, data reception complete
+                    rx_state <= 4'b0000; // Return to idle state
+                end
+            end
+        endcase
+    end
+end
+
+endmodule

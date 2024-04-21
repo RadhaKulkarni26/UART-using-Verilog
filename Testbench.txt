@@ -1,0 +1,45 @@
+module uart_tb;
+
+reg clk, rst;
+reg [7:0] tx_data_in;
+wire tx_out;
+wire rx_in; // Add a wire for rx_in connection
+wire [7:0] rx_data_out;
+
+uart_transmitter dut_tx (
+    .clk(clk),
+    .rst(rst),
+    .data_in(tx_data_in),
+    .tx_out(tx_out)
+);
+
+uart_receiver dut_rx (
+    .clk(clk),
+    .rst(rst),
+    .rx_in(rx_in), // Connect rx_in to a wire
+    .data_out(rx_data_out)
+);
+
+// Data transmission path connection
+assign rx_in = tx_out; // Connect tx_out to rx_in
+
+initial begin
+    clk = 0;
+    rst = 1;
+    tx_data_in = 8'b11001011; // Sample data to transmit
+    // rx_in = 0; // No need to initialize rx_in as it's connected to tx_out
+    #10 rst = 0;
+    // Clock generation and stimulus
+    forever #5 clk = ~clk; // Generate clock with 100 MHz frequency
+    // Stimulate reset and data transmission
+    #50 rst = 1; // Reset
+    #50 rst = 0;
+    #200 $stop; // Stop simulation after a period
+end
+
+always @(posedge clk) begin
+    // Monitor transmitted and received data
+    $display("Time = %t, tx_data_in = %b, tx_out = %b, rx_data_out = %b", $time, tx_data_in, tx_out, rx_data_out);
+end
+
+endmodule
